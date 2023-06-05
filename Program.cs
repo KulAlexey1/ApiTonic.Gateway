@@ -6,10 +6,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 var apiTonicSettings = builder.Configuration.GetSection("ApiTonic").Get<ApiTonicSettings>();
 
-var services = builder.Services;
-services
-    .AddApiTonicServices(apiTonicSettings.Projects);
-services
+builder.Services
+    .AddCors()
+    .AddApiTonicServices(apiTonicSettings.Projects)
     .AddSingleton(ConnectionMultiplexer.Connect(apiTonicSettings.RedisAddress))
     .AddGraphQLServer()
     .AddRemoteSchemasFromRedis(apiTonicSettings.GatewayName, sp => sp.GetRequiredService<ConnectionMultiplexer>());
@@ -17,5 +16,12 @@ services
 var app = builder.Build();
 
 app.MapGraphQL();
+
+app.UseCors(x => x
+    .AllowAnyMethod()
+    .AllowAnyHeader()
+    .AllowCredentials()
+    .SetIsOriginAllowed(origin => true)
+);
 
 app.Run();
